@@ -31,7 +31,9 @@ public sealed class LinkCacheManager : ILinkCacheManager
     public async Task<long> GetPendingClicksAsync(string slug)
     {
         var v = await _conn.Db.StringGetAsync(ClickPrefix + slug);
-        return v.HasValue && long.TryParse(v, out var n) ? n : 0;
+        // RedisValue has an explicit cast to long that parses the stored string.
+        // Safe here because this key is only ever written by INCR (integer).
+        return v.HasValue ? (long)v : 0;
     }
 
     public async Task<IReadOnlyList<(string Slug, long Count)>> FlushPendingClicksAsync()
@@ -44,11 +46,11 @@ public sealed class LinkCacheManager : ILinkCacheManager
         await foreach (var key in server.KeysAsync(pattern: ClickPrefix + "*"))
         {
             var val = await _conn.Db.StringGetDeleteAsync(key);
-            if (val.HasValue && long.TryParse(val, out var count) && count > 0)
-            {
-                var slug = key.ToString()[ClickPrefix.Length..];
-                result.Add((slug, count));
-            }
+            if (!val.HasValue) continue;
+            var count = (long)val;
+            if (count <= 0) continue;
+            var slug = key.ToString()[ClickPrefix.Length..];
+            result.Add((slug, count));
         }
         return result;
     }
