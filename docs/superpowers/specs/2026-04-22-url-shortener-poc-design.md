@@ -10,6 +10,7 @@
 ## Why this POC
 
 `api-member` (the reference company codebase) uses:
+
 - ASP.NET Core Web API on .NET 10
 - SqlSugar ORM + MSSQL
 - Redis (via `StackExchange.Redis`, wrapped by the private `Ventem.Core.Redis` package)
@@ -23,6 +24,7 @@ This POC is **Foundation #1** of an 8-POC backend learning path. The full path i
 ## Scope
 
 One end-to-end runnable app that demonstrates:
+
 1. **Cache-aside** with Redis
 2. **Atomic counter** with Redis `INCR`
 3. **Sorted-set leaderboard** with Redis `ZADD` / `ZREVRANGE`
@@ -30,6 +32,7 @@ One end-to-end runnable app that demonstrates:
 5. A minimal HTML frontend that calls the API
 
 Explicitly **out of scope** (deferred to later POCs):
+
 - Auth / users (POC #2)
 - Automated tests (POC #3)
 - Global error handling depth, logging, observability (POC #4, #7)
@@ -39,17 +42,17 @@ Explicitly **out of scope** (deferred to later POCs):
 
 ## Tech stack
 
-| Concern | Library / tool | Matches api-member? |
-|---|---|---|
-| Runtime | .NET 10 | ✅ |
-| Web framework | ASP.NET Core Web API | ✅ |
-| ORM | SqlSugar | ✅ |
-| Database | MSSQL (SQL Server 2022 Linux container) | ✅ |
-| Redis client | StackExchange.Redis | ✅ (same client `Ventem.Core.Redis` wraps) |
-| Validation | FluentValidation | ✅ |
-| API docs | Swashbuckle (Swagger) | ✅ |
-| Local orchestration | Docker Compose | ✅ |
-| Frontend | Vanilla HTML + `fetch()` (no build step) | demo only |
+| Concern             | Library / tool                           | Matches api-member?                        |
+| ------------------- | ---------------------------------------- | ------------------------------------------ |
+| Runtime             | .NET 10                                  | ✅                                         |
+| Web framework       | ASP.NET Core Web API                     | ✅                                         |
+| ORM                 | SqlSugar                                 | ✅                                         |
+| Database            | MSSQL (SQL Server 2022 Linux container)  | ✅                                         |
+| Redis client        | StackExchange.Redis                      | ✅ (same client `Ventem.Core.Redis` wraps) |
+| Validation          | FluentValidation                         | ✅                                         |
+| API docs            | Swashbuckle (Swagger)                    | ✅                                         |
+| Local orchestration | Docker Compose                           | ✅                                         |
+| Frontend            | Vanilla HTML + `fetch()` (no build step) | demo only                                  |
 
 ## Repository layout
 
@@ -123,12 +126,12 @@ CREATE UNIQUE INDEX IX_ShortLinks_Slug ON ShortLinks(Slug);
 
 Base URL: `http://localhost:5000`
 
-| # | Method | Path | Purpose |
-|---|---|---|---|
-| 1 | POST | `/api/links` | Create a short link |
-| 2 | GET | `/{slug}` | Redirect to target URL + increment click counter |
-| 3 | GET | `/api/links/{slug}/stats` | Return `{slug, targetUrl, clickCount, createdAt}` |
-| 4 | GET | `/api/links/top` | Return top 10 most-clicked links |
+| #   | Method | Path                      | Purpose                                           |
+| --- | ------ | ------------------------- | ------------------------------------------------- |
+| 1   | POST   | `/api/links`              | Create a short link                               |
+| 2   | GET    | `/{slug}`                 | Redirect to target URL + increment click counter  |
+| 3   | GET    | `/api/links/{slug}/stats` | Return `{slug, targetUrl, clickCount, createdAt}` |
+| 4   | GET    | `/api/links/top`          | Return top 10 most-clicked links                  |
 
 Endpoint 2 lives at the root so short URLs read cleanly as `http://localhost:5000/abc123`.
 
@@ -155,6 +158,7 @@ GET /api/links/top
 ### Validation
 
 FluentValidation rules for `CreateLinkRequest`:
+
 - `TargetUrl`: required, valid absolute `http`/`https` URL, max length 2048
 - `[ApiController]` auto-returns 400 with the validation error list on failure
 
@@ -165,6 +169,7 @@ FluentValidation rules for `CreateLinkRequest`:
 Key format: `link:{slug}` → value `TargetUrl`, TTL 1 hour.
 
 On `GET /{slug}`:
+
 ```
 value = redis.GET link:{slug}
 if value is null:
@@ -180,6 +185,7 @@ return 302 → value
 Key format: `click:{slug}` → integer, no TTL.
 
 On `GET /{slug}` after the redirect value is resolved:
+
 ```
 redis.INCR click:{slug}     # atomic, safe under concurrency
 ```
@@ -191,6 +197,7 @@ Key: `top-links` (global) → sorted set of `slug` members scored by click count
 Populated by the hosted service (not on every click, to avoid write amplification).
 
 On `GET /api/links/top`:
+
 ```
 slugs = redis.ZREVRANGE top-links 0 9 WITHSCORES
 return [{slug, targetUrl from cache or DB, clickCount}]
@@ -201,6 +208,7 @@ return [{slug, targetUrl from cache or DB, clickCount}]
 Implements `IHostedService` / `BackgroundService`. Runs every **30 seconds** while the app is alive.
 
 Responsibilities each tick:
+
 1. Enumerate all `click:*` keys in Redis (acceptable for POC scale; production would use a queue or SCAN-based strategy)
 2. For each `click:{slug}` with a non-zero value:
    - `GETDEL click:{slug}` (atomic read-and-reset) — returns current count and deletes the key
@@ -241,6 +249,7 @@ dotnet run                          # api listens on http://localhost:5000
 ```
 
 `docker-compose.yml` defines:
+
 - `mssql`: `mcr.microsoft.com/mssql/server:2022-latest`, port 1433, sa password `Local-Dev-Password-1!` (clearly labelled local-only)
 - `redis`: `redis:7-alpine`, port 6379, no password (local only)
 
@@ -257,6 +266,7 @@ Schema setup: a tiny idempotent startup routine in `Program.cs` runs `CREATE TAB
 ## Success criteria
 
 The POC is complete when:
+
 1. `docker-compose up -d && dotnet run` produces a working API on `localhost:5000`
 2. The frontend can shorten a URL and follow the redirect
 3. The click counter ticks up on every visit (visible in the stats endpoint)
@@ -268,6 +278,18 @@ The POC is complete when:
 ## Teaching artefacts (expected in implementation)
 
 During implementation, each file will include comments explaining:
+`localhost:5000`
+2. The frontend can shorten a URL and follow the redirect
+3. The click counter ticks up on every visit (visible in the stats endpoint)
+4. After ~60 s of clicks, the `ClickCount` column in MSSQL reflects the Redis total
+5. The leaderboard endpoint returns the top 10 in descending order
+6. Swagger UI at `/swagger` lists all four endpoints with working "Try it out"
+7. Repo pushes to GitHub with no credentials exposed
+
+## Teaching artefacts (expected in implementation)
+
+During implementation, each file will include comments explaining:
+
 - DI lifetimes (`AddSingleton` vs `AddScoped` vs `AddTransient`) and why each choice was made
 - The cache-aside, counter, and sorted-set patterns at their call sites
 - What the hosted service does and how it differs from a controller
