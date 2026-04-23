@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>URL Shortener POC</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    h1 { margin-bottom: 0.2rem; }
+    p.sub { color: #666; margin-top: 0; }
+    form { display: flex; gap: 0.5rem; margin: 1rem 0; }
+    input { flex: 1; padding: 0.5rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 0.5rem 1rem; font-size: 1rem; border: 0; background: #1f6feb; color: white; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #1858c2; }
+    #result { padding: 0.75rem; background: #f2f8ff; border-radius: 4px; margin-top: 0.5rem; word-break: break-all; min-height: 1.2em; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { padding: 0.4rem 0.5rem; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+    th { background: #fafafa; }
+    td.count { text-align: right; font-variant-numeric: tabular-nums; }
+    a { color: #1f6feb; }
+  </style>
+</head>
+<body>
+  <h1>URL Shortener POC</h1>
+  <p class="sub">Paste a URL, get a short link. Open it in a new tab and watch the counter tick up.</p>
+
+  <form id="f">
+    <input id="url" type="url" placeholder="https://example.com" required />
+    <button type="submit">Shorten</button>
+  </form>
+  <div id="result">—</div>
+
+  <h2>Top 10 most clicked</h2>
+  <table>
+    <thead><tr><th>Slug</th><th>Target</th><th>Clicks</th></tr></thead>
+    <tbody id="top"></tbody>
+  </table>
+
+  <script>
+    const $f = document.getElementById('f');
+    const $url = document.getElementById('url');
+    const $result = document.getElementById('result');
+    const $top = document.getElementById('top');
+
+    $f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $result.textContent = 'Shortening...';
+      const res = await fetch('/api/links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUrl: $url.value })
+      });
+      if (!res.ok) { $result.textContent = 'Error: ' + res.status; return; }
+      const body = await res.json();
+      $result.innerHTML = `<a href="${body.shortUrl}" target="_blank">${body.shortUrl}</a> → ${body.targetUrl}`;
+      $url.value = '';
+    });
+
+    async function refreshTop() {
+      try {
+        const res = await fetch('/api/links/top');
+        const items = await res.json();
+        $top.innerHTML = items.map(i =>
+          `<tr><td>${i.slug}</td><td><a href="/${i.slug}" target="_blank">${i.targetUrl}</a></td><td class="count">${i.clickCount}</td></tr>`
+        ).join('') || `<tr><td colspan="3" style="color:#888">No data yet — shorten a link and click it a few times.</td></tr>`;
+      } catch { /* ignore transient errors */ }
+    }
+
+    refreshTop();
+    setInterval(refreshTop, 5000);
+  </script>
+</body>
+</html>
