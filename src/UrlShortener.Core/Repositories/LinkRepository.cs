@@ -12,8 +12,8 @@ public sealed class LinkRepository : ILinkRepository
 
     public LinkRepository(ISqlSugarClient db) => _db = db;
 
-    public Task<ShortLink?> FindBySlugAsync(string slug)
-        => _db.Queryable<ShortLink>().FirstAsync(x => x.Slug == slug);
+    public async Task<ShortLink?> FindBySlugAsync(string slug)
+        => await _db.Queryable<ShortLink>().FirstAsync(x => x.Slug == slug);
 
     public async Task<int> InsertAsync(ShortLink link)
     {
