@@ -19,7 +19,7 @@
 
 The private `Ventem.Core*` packages cannot ship in a public repo, so this POC replicates the **patterns** those packages provide using the underlying public libraries. Writing those wrappers by hand is itself the learning goal — once you see your own `RedisCacheManager`, you know exactly what `Ventem.Core.Redis` does.
 
-This POC is **Foundation #1** of an 8-POC backend learning path. The full path is documented in `backend-learning-path.md`.
+This POC is **Foundation #1** of an 8-POC backend learning path. The full path lives in the curriculum repo: [chiehLiu/dotnet-backend-learning](https://github.com/chiehLiu/dotnet-backend-learning) (see `learning-path.md` there).
 
 ## Scope
 

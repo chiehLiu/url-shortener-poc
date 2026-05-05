@@ -59,4 +59,4 @@ This is a **learning POC**. The MSSQL `sa` password in `docker-compose.yml` is a
 
 ## Where this fits in the bigger picture
 
-This is Foundation POC #1 of an 8-POC backend learning path (see `docs/superpowers/specs/backend-learning-path.md`). The next POCs layer on auth, tests, validation depth, service-to-service HTTP, messaging, and observability.
+This is Foundation POC #1 of an 8-POC backend learning path. The full curriculum lives in its own repo: **[chiehLiu/dotnet-backend-learning](https://github.com/chiehLiu/dotnet-backend-learning)** — see `learning-path.md` there. The next POCs layer on auth, tests, validation depth, service-to-service HTTP, messaging, and observability.
